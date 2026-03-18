@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lawnvaders Dashboard</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0f172a; color: #e2e8f0; min-height: 100vh; padding: 24px; }
+
+    .header { display: flex; justify-content: space-between; align-items: flex-start;
+               margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+    h1 { font-size: 1.6rem; font-weight: 700; color: #f8fafc; }
+    .subtitle { color: #64748b; font-size: 0.85rem; margin-top: 4px; }
+    .cycle-badge { background: #1e293b; border: 1px solid #334155; border-radius: 8px;
+                    padding: 8px 14px; font-size: 0.8rem; color: #94a3b8; text-align: right; }
+    .cycle-badge strong { color: #e2e8f0; display: block; font-size: 0.9rem; }
+
+    /* Team stats bar */
+    .team-stats { display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+                   background: #1e293b; border: 1px solid #334155; border-radius: 12px;
+                   padding: 12px 18px; margin-bottom: 20px; }
+    .ts-label { font-size: 0.7rem; color: #64748b; text-transform: uppercase;
+                 letter-spacing: 0.05em; font-weight: 700; margin-right: 4px; white-space: nowrap; }
+    .ts-item { display: flex; flex-direction: column; align-items: center;
+                background: #0f172a; border-radius: 8px; padding: 6px 12px; min-width: 72px; }
+    .ts-name { font-size: 0.65rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; }
+    .ts-val  { font-size: 1.1rem; font-weight: 800; line-height: 1.3; }
+
+    /* Filters */
+    .filters { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;
+                background: #1e293b; border: 1px solid #334155; border-radius: 12px;
+                padding: 14px 18px; margin-bottom: 20px; }
+    .filter-group { display: flex; flex-direction: column; gap: 4px; }
+    .filter-group label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+    .filter-group select { background: #0f172a; border: 1px solid #334155; color: #e2e8f0;
+                            border-radius: 6px; padding: 6px 10px; font-size: 0.85rem; }
+    .filter-group select:focus { outline: none; border-color: #3b82f6; }
+    button { padding: 7px 16px; border-radius: 6px; font-size: 0.82rem; font-weight: 600;
+              cursor: pointer; border: none; }
+    .btn-ghost { background: #1e293b; color: #94a3b8; border: 1px solid #334155; }
+    .btn-ghost:hover { color: #e2e8f0; }
+
+    /* Agent cards */
+    .cards { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+    .agent-card { background: #1e293b; border-radius: 12px; padding: 16px 20px;
+                   min-width: 130px; flex: 1; border: 1px solid #334155; cursor: pointer;
+                   transition: border-color 0.15s; }
+    .agent-card:hover { border-color: #3b82f6; }
+    .agent-card.active { border-color: #3b82f6; background: #1e3a5f; }
+    .agent-card.hidden { display: none; }
+    .agent-name  { font-size: 1rem; font-weight: 700; color: #f1f5f9; }
+    .agent-full  { font-size: 0.7rem; color: #64748b; }
+    .agent-rank  { font-size: 0.7rem; color: #475569; margin-bottom: 8px; }
+    .agent-score { font-size: 2rem; font-weight: 800; line-height: 1; }
+    .agent-label { font-size: 0.7rem; color: #64748b; margin-top: 4px; }
+
+    /* Legend */
+    .legend { display: flex; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: #64748b; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; }
+
+    /* Table */
+    .table-wrap { background: #1e293b; border-radius: 12px; border: 1px solid #334155; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    thead th { background: #0f172a; color: #94a3b8; text-transform: uppercase; font-size: 0.7rem;
+                letter-spacing: 0.05em; padding: 10px 12px; text-align: left; white-space: nowrap; }
+    thead th.group-header { color: #3b82f6; border-bottom: 2px solid #1e3a5f; }
+    tbody tr { border-top: 1px solid #263044; transition: background 0.15s; }
+    tbody tr:hover { background: #263044; }
+    tbody tr.hidden { display: none; }
+    td { padding: 10px 12px; color: #cbd5e1; white-space: nowrap; }
+    td.agent-col { color: #f1f5f9; font-weight: 600; }
+    td.rank-col { color: #475569; font-size: 0.78rem; }
+    td.muted { color: #475569; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <h1>Lawnvaders Dashboard</h1>
+      <div class="subtitle">Updated: March 18, 2026 at 06:00 PM</div>
+    </div>
+    <div class="cycle-badge">
+      Pay Cycle
+      <strong id="cycle-label"></strong>
+    </div>
+  </div>
+
+  <div class="team-stats" id="team-stats"></div>
+
+  <div class="filters">
+    <div class="filter-group">
+      <label>Cycle</label>
+      <select id="cycle-filter">
+        <option value="current">Current Cycle</option>
+        <option value="previous">Previous Cycle</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Agent</label>
+      <select id="agent-filter">
+        <option value="">All Agents</option>
+      </select>
+    </div>
+    <button class="btn-ghost" onclick="clearFilters()">Clear</button>
+  </div>
+
+  <div class="cards" id="cards"></div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="dot" style="background:#22c55e"></div> On track</div>
+    <div class="legend-item"><div class="dot" style="background:#f59e0b"></div> Needs attention</div>
+    <div class="legend-item"><div class="dot" style="background:#ef4444"></div> Below target</div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th rowspan="1">Agent</th>
+          <th class="group-header">Conversion</th>
+          <th class="group-header">Rank</th>
+          <th class="group-header">QA Avg</th>
+          <th class="group-header">Rank</th>
+          <th class="group-header">Audits</th>
+          <th class="group-header">ATT %</th>
+          <th class="group-header">Rank</th>
+          <th class="group-header">Bush %</th>
+          <th class="group-header">Leaf %</th>
+          <th class="group-header">Lawn Treat %</th>
+          <th class="group-header">Mosquito %</th>
+          <th class="group-header">Aeration %</th>
+          <th class="group-header">Flowerbed %</th>
+          <th class="group-header">Ready %</th>
+          <th class="group-header">Rank</th>
+        </tr>
+      </thead>
+      <tbody id="score-table"></tbody>
+    </table>
+  </div>
+
+  <script>
+    const CYCLES = {"current": {"label": "3/15/2026 - 3/28/2026", "agents": [{"name": "Jhen Doctolero", "first": "Jhen", "id": "Jhen_Doctolero", "rank": 1, "conversion": "38.46%", "conv_rank": "1", "att_pct": "0.00%", "att_rank": "2", "bush_pct": "0.00%", "leaf_pct": "0.00%", "lawn_treat_pct": "0.00%", "mosquito_pct": "0.00%", "aeration_pct": "0.00%", "flowerbed_pct": "0.00%", "ready_pct": "81.97%", "ready_rank": "1", "qa_avg": "75.00", "qa_count": 2, "qa_rank": "4"}, {"name": "Saira Atale", "first": "Saira", "id": "Saira_Atale", "rank": 1, "conversion": "37.50%", "conv_rank": "1", "att_pct": "33.33%", "att_rank": "6", "bush_pct": "0.00%", "leaf_pct": "33.33%", "lawn_treat_pct": "0.00%", "mosquito_pct": "0.00%", "aeration_pct": "0.00%", "flowerbed_pct": "0.00%", "ready_pct": "82.99%", "ready_rank": "5", "qa_avg": "95.00", "qa_count": 2, "qa_rank": "4", "isNewbie": true}, {"name": "Ren Arellano", "first": "Ren", "id": "Ren_Arellano", "rank": 2, "conversion": "21.43%", "conv_rank": "2", "att_pct": "0.00%", "att_rank": "2", "bush_pct": "0.00%", "leaf_pct": "0.00%", "lawn_treat_pct": "0.00%", "mosquito_pct": "0.00%", "aeration_pct": "0.00%", "flowerbed_pct": "0.00%", "ready_pct": "75.29%", "ready_rank": "4", "qa_avg": "100.00", "qa_count": 2, "qa_rank": "1"}, {"name": "Cristene Rizare", "first": "Cristene", "id": "Cristene_Rizare", "rank": 3, "conversion": "21.05%", "conv_rank": "3", "att_pct": "0.00%", "att_rank": "2", "bush_pct": "0.00%", "leaf_pct": "0.00%", "lawn_treat_pct": "0.00%", "mosquito_pct": "0.00%", "aeration_pct": "0.00%", "flowerbed_pct": "0.00%", "ready_pct": "74.68%", "ready_rank": "5", "qa_avg": "-", "qa_count": "-", "qa_rank": "-"}, {"name": "Jalene Alope", "first": "Jalene", "id": "Jalene_Alope", "rank": 4, "conversion": "11.11%", "conv_rank": "4", "att_pct": "0.00%", "att_rank": "2", "bush_pct": "0.00%", "leaf_pct": "0.00%", "lawn_treat_pct": "0.00%", "mosquito_pct": "0.00%", "aeration_pct": "0.00%", "flowerbed_pct": "0.00%", "ready_pct": "81.08%", "ready_rank": "2", "qa_avg": "90.00", "qa_count": 2, "qa_rank": "3"}, {"name": "Kae Sison", "first": "Kae", "id": "Kae_Sison", "rank": 5, "conversion": "5.88%", "conv_rank": "5", "att_pct": "100.00%", "att_rank": "1", "bush_pct": "0.00%", "leaf_pct": "100.00%", "lawn_treat_pct": "0.00%", "mosquito_pct": "0.00%", "aeration_pct": "0.00%", "flowerbed_pct": "0.00%", "ready_pct": "77.97%", "ready_rank": "3", "qa_avg": "97.50", "qa_count": 2, "qa_rank": "2"}, {"name": "Roel Ramos", "first": "Roel", "id": "Roel_Ramos", "rank": 6, "conversion": "17.65%", "conv_rank": "6", "att_pct": "0.00%", "att_rank": "6", "bush_pct": "0.00%", "leaf_pct": "0.00%", "lawn_treat_pct": "0.00%", "mosquito_pct": "0.00%", "aeration_pct": "0.00%", "flowerbed_pct": "0.00%", "ready_pct": "82.56%", "ready_rank": "5", "qa_avg": "-", "qa_count": "-", "qa_rank": "-", "isNewbie": true}, {"name": "Star Coleongco", "first": "Star", "id": "Star_Coleongco", "rank": 6, "conversion": "0.00%", "conv_rank": "6", "att_pct": "", "att_rank": "2", "bush_pct": "", "leaf_pct": "", "lawn_treat_pct": "", "mosquito_pct": "", "aeration_pct": "", "flowerbed_pct": "", "ready_pct": "71.86%", "ready_rank": "6", "qa_avg": "-", "qa_count": "-", "qa_rank": "-"}, {"name": "Grace Labansawan", "first": "Grace", "id": "Grace_Labansawan", "rank": 14, "conversion": "0.00%", "conv_rank": "14", "att_pct": "-", "att_rank": "-", "bush_pct": "-", "leaf_pct": "-", "lawn_treat_pct": "-", "mosquito_pct": "-", "aeration_pct": "-", "flowerbed_pct": "-", "ready_pct": "82.34%", "ready_rank": "9", "qa_avg": "-", "qa_count": "-", "qa_rank": "-", "isNewbie": true}, {"name": "Francer Torquator", "first": "Francer", "id": "Francer_Torquator", "rank": 15, "conversion": "11.11%", "conv_rank": "15", "att_pct": "100.00%", "att_rank": "1", "bush_pct": "0.00%", "leaf_pct": "0.00%", "lawn_treat_pct": "100.00%", "mosquito_pct": "0.00%", "aeration_pct": "0.00%", "flowerbed_pct": "0.00%", "ready_pct": "84.39%", "ready_rank": "3", "qa_avg": "96.00", "qa_count": 2, "qa_rank": "3", "isNewbie": true}, {"name": "Edward Tojong", "first": "Edward", "id": "Edward_Tojong", "rank": 17, "conversion": "10.00%", "conv_rank": "17", "att_pct": "0.00%", "att_rank": "10", "bush_pct": "0.00%", "leaf_pct": "0.00%", "lawn_treat_pct": "0.00%", "mosquito_pct": "0.00%", "aeration_pct": "0.00%", "flowerbed_pct": "0.00%", "ready_pct": "81.84%", "ready_rank": "10", "qa_avg": "22.50", "qa_count": 2, "qa_rank": "16", "isNewbie": true}, {"name": "Kathleen Rosales", "first": "Kathleen", "id": "Kathleen_Rosales", "rank": 22, "conversion": "5.56%", "conv_rank": "22", "att_pct": "", "att_rank": "10", "bush_pct": "", "leaf_pct": "", "lawn_treat_pct": "", "mosquito_pct": "", "aeration_pct": "", "flowerbed_pct": "", "ready_pct": "78.27%", "ready_rank": "20", "qa_avg": "-", "qa_count": "-", "qa_rank": "-", "isNewbie": true}], "team": {"conversion": "16.48%", "conversion_color": "#22c55e", "qa": "90.62", "qa_color": "#22c55e", "att": "10.00%", "att_color": "#f59e0b", "bush": "0.00%", "bush_color": "#ef4444", "leaf": "10.00%", "leaf_color": "#f59e0b", "lawn": "0.00%", "lawn_color": "#ef4444", "mosq": "0.00%", "mosq_color": "#ef4444", "aer": "0.00%", "aer_color": "#ef4444", "flower": "0.00%", "flower_color": "#ef4444", "ready": "79.60%", "ready_color": "#f59e0b"}, "team_groups": {"tenured": {"conversion": "16.48%", "conversion_color": "#22c55e", "qa": "90.62", "qa_color": "#22c55e", "att": "10.00%", "att_color": "#f59e0b", "bush": "0.00%", "bush_color": "#ef4444", "leaf": "10.00%", "leaf_color": "#f59e0b", "lawn": "0.00%", "lawn_color": "#ef4444", "mosq": "0.00%", "mosq_color": "#ef4444", "aer": "0.00%", "aer_color": "#ef4444", "flower": "0.00%", "flower_color": "#ef4444", "ready": "79.60%", "ready_color": "#f59e0b"}, "newbies": {"conversion": "13.63%", "conversion_color": "#f59e0b", "qa": "71.16", "qa_color": "#ef4444", "att": "33.33%", "att_color": "#22c55e", "bush": "0.00%", "bush_color": "#ef4444", "leaf": "8.33%", "leaf_color": "#ef4444", "lawn": "25.00%", "lawn_color": "#22c55e", "mosq": "0.00%", "mosq_color": "#ef4444", "aer": "0.00%", "aer_color": "#ef4444", "flower": "0.00%", "flower_color": "#ef4444", "ready": "82.06%", "ready_color": "#f59e0b"}, "all": {"conversion": "14.97%", "conversion_color": "#f59e0b", "qa": "82.28", "qa_color": "#f59e0b", "att": "25.92%", "att_color": "#22c55e", "bush": "0.00%", "bush_color": "#ef4444", "leaf": "14.81%", "leaf_color": "#f59e0b", "lawn": "11.11%", "lawn_color": "#f59e0b", "mosq": "0.00%", "mosq_color": "#ef4444", "aer": "0.00%", "aer_color": "#ef4444", "flower": "0.00%", "flower_color": "#ef4444", "ready": "79.60%", "ready_color": "#f59e0b"}}}, "previous": {"label": "3/1/2026 - 3/14/2026", "agents": [{"name": "Jhen Doctolero", "first": "Jhen", "id": "Jhen_Doctolero", "rank": 1, "conversion": "24.53%", "conv_rank": "1", "att_pct": "54.55%", "att_rank": "3", "bush_pct": "36.36%", "leaf_pct": "18.18%", "lawn_treat_pct": "0.00%", "mosquito_pct": "0.00%", "aeration_pct": "0.00%", "flowerbed_pct": "0.00%", "ready_pct": "76.00%", "ready_rank": "6", "qa_avg": "70.00", "qa_count": 4, "qa_rank": "6"}, {"name": "Saira Atale", "first": "Saira", "id": "Saira_Atale", "rank": 1, "conversion": "28.95%", "conv_rank": "1", "att_pct": "35.29%", "att_rank": "10", "bush_pct": "11.76%", "leaf_pct": "11.76%", "lawn_treat_pct": "5.88%", "mosquito_pct": "0.00%", "aeration_pct": "0.00%", "flowerbed_pct": "5.88%", "ready_pct": "81.65%", "ready_rank": "10", "qa_avg": "83.00", "qa_count": 4, "qa_rank": "12", "isNewbie": true}, {"name": "Edward Tojong", "first": "Edward", "id": "Edward_Tojong", "rank": 2, "conversion": "25.71%", "conv_rank": "2", "att_pct": "53.33%", "att_rank": "5", "bush_pct": "20.00%", "leaf_pct": "13.33%", "lawn_treat_pct": "13.33%", "mosquito_pct": "0.00%", "aeration_pct": "0.00%", "flowerbed_pct": "6.67%", "ready_pct": "81.57%", "ready_rank": "13", "qa_avg": "71.25", "qa_count": 4, "qa_rank": "14", "isNewbie": true}, {"name": "Jalene Alope", "first": "Jalene", "id": "Jalene_Alope", "rank": 2, "conversion": "22.41%", "conv_rank": "2", "att_pct": "25.00%", "att_rank": "5", "bush_pct": "0.00%", "leaf_pct": "8.33%", "lawn_treat_pct": "16.67%", "mosquito_pct": "0.00%", "aeration_pct": "0.00%", "flowerbed_pct": "0.00%", "ready_pct": "78.81%", "ready_rank": "2", "qa_avg": "96.75", "qa_count": 4, "qa_rank": "2"}, {"name": "Kae Sison", "first": "Kae", "id": "Kae_Sison", "rank": 3, "conversion": "19.23%", "conv_rank": "3", "att_pct": "20.00%", "att_rank": "6", "bush_pct": "0.00%", "leaf_pct": "20.00%", "lawn_treat_pct": "0.00%", "mosquito_pct": "0.00%", "aeration_pct": "0.00%", "flowerbed_pct": "0.00%", "ready_pct": "90.80%", "ready_rank": "1", "qa_avg": "81.00", "qa_count": 2, "qa_rank": "5"}, {"name": "Cristene Rizare", "first": "Cristene", "id": "Cristene_Rizare", "rank": 4, "conversion": "17.65%", "conv_rank": "4", "att_pct": "60.00%", "att_rank": "2", "bush_pct": "20.00%", "leaf_pct": "20.00%", "lawn_treat_pct": "20.00%", "mosquito_pct": "0.00%", "aeration_pct": "0.00%", "flowerbed_pct": "0.00%", "ready_pct": "77.47%", "ready_rank": "5", "qa_avg": "93.33", "qa_count": 3, "qa_rank": "3"}, {"name": "Ren Arellano", "first": "Ren", "id": "Ren_Arellano", "rank": 5, "conversion": "15.07%", "conv_rank": "5", "att_pct": "45.45%", "att_rank": "4", "bush_pct": "27.27%", "leaf_pct": "0.00%", "lawn_treat_pct": "9.09%", "mosquito_pct": "0.00%", "aeration_pct": "0.00%", "flowerbed_pct": "9.09%", "ready_pct": "77.87%", "ready_rank": "4", "qa_avg": "100.00", "qa_count": 2, "qa_rank": "1"}, {"name": "Grace Labansawan", "first": "Grace", "id": "Grace_Labansawan", "rank": 6, "conversion": "0.00%", "conv_rank": "6", "att_pct": "-", "att_rank": "-", "bush_pct": "-", "leaf_pct": "-", "lawn_treat_pct": "-", "mosquito_pct": "-", "aeration_pct": "-", "flowerbed_pct": "-", "ready_pct": "89.73%", "ready_rank": "3", "qa_avg": "-", "qa_count": "-", "qa_rank": "-", "isNewbie": true}, {"name": "Roel Ramos", "first": "Roel", "id": "Roel_Ramos", "rank": 6, "conversion": "0.00%", "conv_rank": "6", "att_pct": "", "att_rank": "2", "bush_pct": "", "leaf_pct": "", "lawn_treat_pct": "", "mosquito_pct": "", "aeration_pct": "", "flowerbed_pct": "", "ready_pct": "66.67%", "ready_rank": "11", "qa_avg": "-", "qa_count": "-", "qa_rank": "-", "isNewbie": true}, {"name": "Star Coleongco", "first": "Star", "id": "Star_Coleongco", "rank": 6, "conversion": "11.54%", "conv_rank": "6", "att_pct": "66.67%", "att_rank": "1", "bush_pct": "0.00%", "leaf_pct": "0.00%", "lawn_treat_pct": "66.67%", "mosquito_pct": "0.00%", "aeration_pct": "0.00%", "flowerbed_pct": "0.00%", "ready_pct": "78.60%", "ready_rank": "3", "qa_avg": "89.75", "qa_count": 4, "qa_rank": "4"}, {"name": "Francer Torquator", "first": "Francer", "id": "Francer_Torquator", "rank": 11, "conversion": "17.98%", "conv_rank": "11", "att_pct": "37.50%", "att_rank": "9", "bush_pct": "18.75%", "leaf_pct": "12.50%", "lawn_treat_pct": "6.25%", "mosquito_pct": "0.00%", "aeration_pct": "0.00%", "flowerbed_pct": "0.00%", "ready_pct": "81.42%", "ready_rank": "14", "qa_avg": "96.00", "qa_count": 2, "qa_rank": "3", "isNewbie": true}, {"name": "Kathleen Rosales", "first": "Kathleen", "id": "Kathleen_Rosales", "rank": 24, "conversion": "5.45%", "conv_rank": "24", "att_pct": "0.00%", "att_rank": "23", "bush_pct": "0.00%", "leaf_pct": "0.00%", "lawn_treat_pct": "0.00%", "mosquito_pct": "0.00%", "aeration_pct": "0.00%", "flowerbed_pct": "0.00%", "ready_pct": "79.62%", "ready_rank": "21", "qa_avg": "65.25", "qa_count": 4, "qa_rank": "17", "isNewbie": true}], "team": {"conversion": "18.89%", "conversion_color": "#22c55e", "qa": "87.78", "qa_color": "#f59e0b", "att": "42.55%", "att_color": "#22c55e", "bush": "17.02%", "bush_color": "#22c55e", "leaf": "10.64%", "leaf_color": "#f59e0b", "lawn": "12.77%", "lawn_color": "#f59e0b", "mosq": "0.00%", "mosq_color": "#ef4444", "aer": "0.00%", "aer_color": "#ef4444", "flower": "2.13%", "flower_color": "#ef4444", "ready": "80.01%", "ready_color": "#f59e0b"}, "team_groups": {"tenured": {"conversion": "18.89%", "conversion_color": "#22c55e", "qa": "87.78", "qa_color": "#f59e0b", "att": "42.55%", "att_color": "#22c55e", "bush": "17.02%", "bush_color": "#22c55e", "leaf": "10.64%", "leaf_color": "#f59e0b", "lawn": "12.77%", "lawn_color": "#f59e0b", "mosq": "0.00%", "mosq_color": "#ef4444", "aer": "0.00%", "aer_color": "#ef4444", "flower": "2.13%", "flower_color": "#ef4444", "ready": "80.01%", "ready_color": "#f59e0b"}, "newbies": {"conversion": "13.01%", "conversion_color": "#f59e0b", "qa": "78.87", "qa_color": "#f59e0b", "att": "31.53%", "att_color": "#22c55e", "bush": "12.62%", "bush_color": "#f59e0b", "leaf": "9.39%", "leaf_color": "#ef4444", "lawn": "6.36%", "lawn_color": "#ef4444", "mosq": "0.00%", "mosq_color": "#ef4444", "aer": "0.00%", "aer_color": "#ef4444", "flower": "3.13%", "flower_color": "#ef4444", "ready": "80.11%", "ready_color": "#f59e0b"}, "all": {"conversion": "15.70%", "conversion_color": "#22c55e", "qa": "84.63", "qa_color": "#f59e0b", "att": "39.77%", "att_color": "#22c55e", "bush": "13.41%", "bush_color": "#f59e0b", "leaf": "10.41%", "leaf_color": "#f59e0b", "lawn": "13.78%", "lawn_color": "#f59e0b", "mosq": "0.00%", "mosq_color": "#ef4444", "aer": "0.00%", "aer_color": "#ef4444", "flower": "2.16%", "flower_color": "#ef4444", "ready": "80.01%", "ready_color": "#f59e0b"}}}};
+
+    function sc(val, mode) {
+      const v = parseFloat(String(val).replace('%', ''));
+      if (isNaN(v)) return '#94a3b8';
+      if (mode === 'score') { return v >= 90 ? '#22c55e' : v >= 75 ? '#f59e0b' : '#ef4444'; }
+      if (mode === 'ready') { return v >= 85 ? '#22c55e' : v >= 75 ? '#f59e0b' : '#ef4444'; }
+      return v >= 15 ? '#22c55e' : v >= 10 ? '#f59e0b' : '#ef4444';
+    }
+
+    function renderTeamStats(t, label) {
+      document.getElementById('team-stats').innerHTML =
+        '<div class="ts-label">' + (label || 'Team Avg') + '</div>' +
+        ts('Conversion', t.conversion, t.conversion_color) +
+        ts('QA',         t.qa,         t.qa_color) +
+        ts('ATT',        t.att,        t.att_color) +
+        ts('Bush',       t.bush,       t.bush_color) +
+        ts('Leaf',       t.leaf,       t.leaf_color) +
+        ts('Lawn Treat', t.lawn,       t.lawn_color) +
+        ts('Mosquito',   t.mosq,       t.mosq_color) +
+        ts('Aeration',   t.aer,        t.aer_color) +
+        ts('Flowerbed',  t.flower,     t.flower_color) +
+        ts('Ready',      t.ready,      t.ready_color);
+    }
+
+    function avgVal(agents, key) {
+      const vals = agents.map(a => parseFloat(String(a[key]).replace('%',''))).filter(v => !isNaN(v));
+      if (!vals.length) return null;
+      return vals.reduce((a,b) => a+b, 0) / vals.length;
+    }
+
+    function recomputeTeamStats(agents, label) {
+      const p = (key, suffix) => { const v = avgVal(agents, key); return v !== null ? v.toFixed(2) + (suffix||'') : '-'; };
+      const t = {
+        conversion: p('conversion','%'), conversion_color: sc(avgVal(agents,'conversion'),'pct'),
+        qa:         p('qa_avg',''),      qa_color:         sc(avgVal(agents,'qa_avg'),'score'),
+        att:        p('att_pct','%'),    att_color:        sc(avgVal(agents,'att_pct'),'pct'),
+        bush:       p('bush_pct','%'),   bush_color:       sc(avgVal(agents,'bush_pct'),'pct'),
+        leaf:       p('leaf_pct','%'),   leaf_color:       sc(avgVal(agents,'leaf_pct'),'pct'),
+        lawn:       p('lawn_treat_pct','%'), lawn_color:   sc(avgVal(agents,'lawn_treat_pct'),'pct'),
+        mosq:       p('mosquito_pct','%'),   mosq_color:   sc(avgVal(agents,'mosquito_pct'),'pct'),
+        aer:        p('aeration_pct','%'),   aer_color:    sc(avgVal(agents,'aeration_pct'),'pct'),
+        flower:     p('flowerbed_pct','%'),  flower_color: sc(avgVal(agents,'flowerbed_pct'),'pct'),
+        ready:      p('ready_pct','%'),  ready_color:      sc(avgVal(agents,'ready_pct'),'ready'),
+      };
+      renderTeamStats(t, label);
+    }
+
+    function ts(name, val, color) {
+      return '<div class="ts-item"><span class="ts-name">' + name +
+             '</span><span class="ts-val" style="color:' + (color||'#94a3b8') + '">' +
+             (val||'-') + '</span></div>';
+    }
+
+    function renderCards(agents) {
+      const agentVal = document.getElementById('agent-filter').value;
+      document.getElementById('cards').innerHTML = agents.map(ag => {
+        const color = sc(ag.conversion, 'pct');
+        const hidden = agentVal && ag.name !== agentVal ? ' hidden' : '';
+        const active = agentVal && ag.name === agentVal ? ' active' : '';
+        return '<div class="agent-card' + hidden + active + '" id="card-' + ag.id +
+               '" data-agent="' + ag.name + '">' +
+               '<div class="agent-name">' + ag.first + '</div>' +
+               '<div class="agent-full">' + ag.name + '</div>' +
+               '<div class="agent-rank">#' + ag.conv_rank + ' team</div>' +
+               '<div class="agent-score" style="color:' + color + '">' + ag.conversion + '</div>' +
+               '<div class="agent-label">Conversion</div></div>';
+      }).join('');
+      document.querySelectorAll('.agent-card').forEach(card => {
+        card.addEventListener('click', () => {
+          const sel = document.getElementById('agent-filter');
+          sel.value = sel.value === card.dataset.agent ? '' : card.dataset.agent;
+          applyAgentFilter();
+        });
+      });
+    }
+
+    function renderTable(agents) {
+      document.getElementById('score-table').innerHTML = agents.map(ag => {
+        return '<tr data-agent="' + ag.name + '">' +
+          '<td class="agent-col">' + ag.name + '</td>' +
+          '<td><strong style="color:' + sc(ag.conversion,'pct')      + '">' + ag.conversion     + '</strong></td>' +
+          '<td class="rank-col">#' + ag.conv_rank  + '</td>' +
+          '<td><strong style="color:' + sc(ag.qa_avg,'score')        + '">' + ag.qa_avg         + '</strong></td>' +
+          '<td class="rank-col">#' + ag.qa_rank    + '</td>' +
+          '<td class="muted">'    + ag.qa_count    + '</td>' +
+          '<td><strong style="color:' + sc(ag.att_pct,'pct')         + '">' + ag.att_pct        + '</strong></td>' +
+          '<td class="rank-col">#' + ag.att_rank   + '</td>' +
+          '<td><strong style="color:' + sc(ag.bush_pct,'pct')        + '">' + ag.bush_pct       + '</strong></td>' +
+          '<td><strong style="color:' + sc(ag.leaf_pct,'pct')        + '">' + ag.leaf_pct       + '</strong></td>' +
+          '<td><strong style="color:' + sc(ag.lawn_treat_pct,'pct')  + '">' + ag.lawn_treat_pct + '</strong></td>' +
+          '<td><strong style="color:' + sc(ag.mosquito_pct,'pct')    + '">' + ag.mosquito_pct   + '</strong></td>' +
+          '<td><strong style="color:' + sc(ag.aeration_pct,'pct')    + '">' + ag.aeration_pct   + '</strong></td>' +
+          '<td><strong style="color:' + sc(ag.flowerbed_pct,'pct')   + '">' + ag.flowerbed_pct  + '</strong></td>' +
+          '<td><strong style="color:' + sc(ag.ready_pct,'ready')     + '">' + ag.ready_pct      + '</strong></td>' +
+          '<td class="rank-col">#' + ag.ready_rank + '</td>' +
+          '</tr>';
+      }).join('');
+    }
+
+    function renderAgentOptions(agents) {
+      const sel = document.getElementById('agent-filter');
+      const cur = sel.value;
+      sel.innerHTML = '<option value="">All Agents</option>' +
+        '<option value="__tenured__"' + (cur === '__tenured__' ? ' selected' : '') + '>👔 Tenured</option>' +
+        '<option value="__newbies__"' + (cur === '__newbies__' ? ' selected' : '') + '>⭐ Newbies</option>' +
+        agents.filter(ag => !ag.isNewbie).map(ag => '<option value="' + ag.name + '"' +
+          (ag.name === cur ? ' selected' : '') + '>' + ag.name + '</option>').join('') +
+        agents.filter(ag => ag.isNewbie).map(ag => '<option value="' + ag.name + '"' +
+          (ag.name === cur ? ' selected' : '') + '>' + ag.name + '</option>').join('');
+    }
+
+    function renderCycle(key) {
+      const data = CYCLES[key];
+      document.getElementById('cycle-label').textContent = data.label;
+      renderTeamStats(data.team);
+      renderAgentOptions(data.agents);
+      renderCards(data.agents);
+      renderTable(data.agents);
+      applyAgentFilter();
+    }
+
+    function applyAgentFilter() {
+      const agentVal = document.getElementById('agent-filter').value;
+      const cycleKey = document.getElementById('cycle-filter').value;
+      const allAgents = CYCLES[cycleKey].agents;
+      const newbieNames = new Set(allAgents.filter(a => a.isNewbie).map(a => a.name));
+
+      let filteredAgents, statsLabel;
+      if (!agentVal)                  { filteredAgents = allAgents;                              statsLabel = 'Team Avg'; }
+      else if (agentVal === '__newbies__') { filteredAgents = allAgents.filter(a => a.isNewbie);    statsLabel = 'Newbies Avg'; }
+      else if (agentVal === '__tenured__') { filteredAgents = allAgents.filter(a => !a.isNewbie);   statsLabel = 'Tenured Avg'; }
+      else                            { filteredAgents = allAgents.filter(a => a.name === agentVal); statsLabel = agentVal.split(' ')[0]; }
+
+      document.querySelectorAll('#score-table tr').forEach(tr => {
+        let match;
+        if (!agentVal) match = true;
+        else if (agentVal === '__newbies__') match = newbieNames.has(tr.dataset.agent);
+        else if (agentVal === '__tenured__') match = !newbieNames.has(tr.dataset.agent);
+        else match = tr.dataset.agent === agentVal;
+        tr.classList.toggle('hidden', !match);
+      });
+      document.querySelectorAll('.agent-card').forEach(card => {
+        let match;
+        if (!agentVal) match = true;
+        else if (agentVal === '__newbies__') match = newbieNames.has(card.dataset.agent);
+        else if (agentVal === '__tenured__') match = !newbieNames.has(card.dataset.agent);
+        else match = card.dataset.agent === agentVal;
+        card.classList.toggle('hidden', !match);
+        const isGroup = agentVal === '__newbies__' || agentVal === '__tenured__';
+        card.classList.toggle('active', !!(agentVal && !isGroup && card.dataset.agent === agentVal));
+      });
+
+      if (!agentVal || agentVal === '__tenured__' || agentVal === '__newbies__') {
+        const gkey = !agentVal ? 'all' : agentVal === '__tenured__' ? 'tenured' : 'newbies';
+        renderTeamStats(CYCLES[cycleKey].team_groups[gkey], statsLabel);
+      } else {
+        recomputeTeamStats(filteredAgents, statsLabel);
+      }
+    }
+
+    function clearFilters() {
+      document.getElementById('agent-filter').value = '';
+      applyAgentFilter();
+    }
+
+    document.getElementById('cycle-filter').addEventListener('change', function() {
+      renderCycle(this.value);
+    });
+
+    document.getElementById('agent-filter').addEventListener('change', applyAgentFilter);
+
+    // Init
+    renderCycle('current');
+
+    // Silent auto-refresh every 1 hour
+    setTimeout(() => location.reload(), 60 * 60 * 1000);
+  </script>
+</body>
+</html>
