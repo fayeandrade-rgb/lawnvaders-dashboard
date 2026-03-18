@@ -43,9 +43,9 @@
     .btn-ghost:hover { color: #e2e8f0; }
 
     /* Agent cards */
-    .cards { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; margin-bottom: 20px; }
     .agent-card { background: #1e293b; border-radius: 12px; padding: 16px 20px;
-                   min-width: 130px; flex: 1; border: 1px solid #334155; cursor: pointer;
+                   border: 1px solid #334155; cursor: pointer;
                    transition: border-color 0.15s; }
     .agent-card:hover { border-color: #3b82f6; }
     .agent-card.active { border-color: #3b82f6; background: #1e3a5f; }
@@ -79,7 +79,7 @@
   <div class="header">
     <div>
       <h1>Lawnvaders Dashboard</h1>
-      <div class="subtitle">Updated: March 18, 2026 at 06:23 PM</div>
+      <div class="subtitle">Updated: March 18, 2026 at 06:26 PM</div>
     </div>
     <div class="cycle-badge">
       Pay Cycle
@@ -203,7 +203,7 @@
         const active = agentVal && ag.name === agentVal ? ' active' : '';
         return '<div class="agent-card' + hidden + active + '" id="card-' + ag.id +
                '" data-agent="' + ag.name + '">' +
-               '<div class="agent-name">' + ag.name + '</div>' +
+               '<div class="agent-name">' + ag.first + '</div>' +
                '<div class="agent-rank">#' + ag.conv_rank + ' team</div>' +
                '<div class="agent-score" style="color:' + color + '">' + ag.conversion + '</div>' +
                '<div class="agent-label">Conversion</div></div>';
