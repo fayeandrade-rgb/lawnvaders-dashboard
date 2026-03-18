@@ -50,9 +50,8 @@
     .agent-card:hover { border-color: #3b82f6; }
     .agent-card.active { border-color: #3b82f6; background: #1e3a5f; }
     .agent-card.hidden { display: none; }
-    .agent-name  { font-size: 1rem; font-weight: 700; color: #f1f5f9; }
-    .agent-full  { font-size: 0.7rem; color: #64748b; }
-    .agent-rank  { font-size: 0.7rem; color: #475569; margin-bottom: 8px; }
+    .agent-name  { font-size: 0.88rem; font-weight: 700; color: #f1f5f9; line-height: 1.3; }
+    .agent-rank  { font-size: 0.7rem; color: #475569; margin-bottom: 8px; margin-top: 2px; }
     .agent-score { font-size: 2rem; font-weight: 800; line-height: 1; }
     .agent-label { font-size: 0.7rem; color: #64748b; margin-top: 4px; }
 
@@ -80,7 +79,7 @@
   <div class="header">
     <div>
       <h1>Lawnvaders Dashboard</h1>
-      <div class="subtitle">Updated: March 18, 2026 at 06:18 PM</div>
+      <div class="subtitle">Updated: March 18, 2026 at 06:23 PM</div>
     </div>
     <div class="cycle-badge">
       Pay Cycle
@@ -204,8 +203,7 @@
         const active = agentVal && ag.name === agentVal ? ' active' : '';
         return '<div class="agent-card' + hidden + active + '" id="card-' + ag.id +
                '" data-agent="' + ag.name + '">' +
-               '<div class="agent-name">' + ag.first + '</div>' +
-               '<div class="agent-full">' + ag.name + '</div>' +
+               '<div class="agent-name">' + ag.name + '</div>' +
                '<div class="agent-rank">#' + ag.conv_rank + ' team</div>' +
                '<div class="agent-score" style="color:' + color + '">' + ag.conversion + '</div>' +
                '<div class="agent-label">Conversion</div></div>';
